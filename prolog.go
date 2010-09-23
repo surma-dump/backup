@@ -52,10 +52,11 @@ func ShowHelp(error bool) {
 	for _, author := range GetAuthors() {
 		fmt.Fprintf(output, "\t%s\n", author)
 	}
+	flag.PrintDefaults()
 }
 
 func SetupEnv(c *BackupConf) (w Warnings, e Error) {
-	configFile := flag.String("c", "~/.backuprc", "Path to config file")
+	configFile := flag.String("c", os.Getenv("HOME")+"/.backuprc", "Path to config file")
 	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
@@ -67,6 +68,5 @@ func SetupEnv(c *BackupConf) (w Warnings, e Error) {
 		e = os.NewError("Config file does not exist or is not a regular file")
 		return
 	}
-
 	return
 }
