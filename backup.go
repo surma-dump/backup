@@ -1,8 +1,17 @@
 package main
 
-import (
-	//"fmt"
-)
+import ()
+
+
+type BackupConf struct {
+	BackupLocation         string
+	NumStacks              uint8
+	StackSize              uint8
+	CyclicStackArrangement bool
+	Whitelist              []string "Folders"
+	Blacklist              []string
+	Visited                []bool
+}
 
 var (
 	VERSION = "0.1"
@@ -10,6 +19,6 @@ var (
 )
 
 func main() {
-	_, _ := SetupEnv()
+	_, _ = SetupEnv()
 
 }

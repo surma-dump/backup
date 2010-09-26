@@ -30,7 +30,6 @@ func ShowHelp(error bool) {
 
 func SetupEnv() (w Warnings, e Error) {
 	configFile := flag.String("c", "~/.backuprc", "Path to config file")
-	backupName := flag.String("n", "default", "Name for the template to load")
 	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
@@ -42,7 +41,7 @@ func SetupEnv() (w Warnings, e Error) {
 		e.NewError("Config file does not exist or is not a regular file")
 		return
 	}
+
 	_ = configFile
-	_ = backupName
 	return
 }
