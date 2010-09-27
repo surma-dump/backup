@@ -9,7 +9,7 @@ import (
 )
 
 func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
-	e = ReadJSONFile(path, *conf)
+	e = ReadJSONFile(path, conf)
 	if e != nil {
 		return
 	}
@@ -20,13 +20,12 @@ func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
 }
 
 func checkConfigSanity(conf *BackupConf) (w Warnings, e Error) {
-	if conf.Visited != nil {
-		w.AddWarning("Visited should not be defined by a config file. Its values will be ignored")
-	}
 	conf.Visited = make([]bool, len(conf.Whitelist))
+	conf.LastBackup = 0
+	conf.IsIncremental = false
 
 	for _, path := range conf.Whitelist {
-		if !NonSpecialFileExists(path) {
+		if !IsNonSpecialFile(path) {
 			w.AddWarning("\"" + path + "\" could not be found. It will be ignored")
 		}
 	}
@@ -64,9 +63,10 @@ func SetupEnv(c *BackupConf) (w Warnings, e Error) {
 		ShowHelp(false)
 	}
 
-	if !RegularFileExists(*configFile) {
+	if !IsRegularFile(*configFile) {
 		e = os.NewError("Config file does not exist or is not a regular file")
 		return
 	}
+	w, e = readConfig(*configFile, c)
 	return
 }

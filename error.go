@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"os"
 	"container/vector"
 )
@@ -13,29 +11,18 @@ func NewError(desc string) Error {
 	return os.NewError(desc)
 }
 
-type Warnings interface {
-	AddWarning(desc string)
-	AddWarningFromError(err Error)
-	GetWarnings() []string
-}
+type Warnings []string
 
-type mWarnings struct {
-	messages []string
-}
-
-func (w *mWarnings) AddWarning(desc string) {
-	if w.messages == nil {
-		w.messages = make([]string, 1, 10)
+func (w *Warnings) AddWarning(desc string) {
+	if w == nil {
+		t := make([]string, 1, 4)
+		w = (*Warnings)(&t)
 	}
 
-	v := (*vector.StringVector)(&w.messages)
+	v := (*vector.StringVector)(w)
 	v.Push(desc)
 }
 
-func (w *mWarnings) AddWarningFromError(err Error) {
+func (w *Warnings) AddWarningFromError(err Error) {
 	w.AddWarning(err.String())
-}
-
-func (w *mWarnings) GetWarnings() []string {
-	return w.messages
 }
