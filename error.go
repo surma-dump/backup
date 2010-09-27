@@ -26,3 +26,9 @@ func (w *Warnings) AddWarning(desc string) {
 func (w *Warnings) AddWarningFromError(err Error) {
 	w.AddWarning(err.String())
 }
+
+func (w *Warnings) Merge(w2 Warnings) {
+	for _, msg := range w2 {
+		w.AddWarning(msg)
+	}
+}

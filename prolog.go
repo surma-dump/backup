@@ -6,6 +6,7 @@ import (
 	"os"
 	"fmt"
 	"strings"
+	"math"
 )
 
 func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
@@ -14,22 +15,55 @@ func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
 		return
 	}
 
-	w, e = checkConfigSanity(conf)
-	return
+	w, e = conf.CheckConfigSanity()
+	if e != nil {
+		return
+	}
 
+	w2, e2 := extrapolateRestData(conf)
+	w.Merge(w2)
+	if e2 != nil {
+		e = e2
+	}
+	return
 }
 
-func checkConfigSanity(conf *BackupConf) (w Warnings, e Error) {
-	conf.Visited = make([]bool, len(conf.Whitelist))
-	conf.LastBackup = 0
-	conf.IsIncremental = false
-
+func (conf *BackupConf) CheckConfigSanity() (w Warnings, e Error) {
 	for _, path := range conf.Whitelist {
 		if !IsNonSpecialFile(path) {
 			w.AddWarning("\"" + path + "\" could not be found. It will be ignored")
 		}
 	}
 
+	return
+}
+
+func (conf *BackupConf) GetCurrentStackName() string {
+	zeros := fmt.Sprintf("%%0%dd", int(math.Ceil(math.Log10(float64(conf.NumStacks)))))
+	return fmt.Sprintf("stack_"+zeros, 0)
+}
+
+func extrapolateRestData(conf *BackupConf) (w Warnings, e Error) {
+	conf.Visited = make([]bool, len(conf.Whitelist))
+	conf.LastBackup, conf.IsIncremental, w, e = getBackupDateAndMode(conf)
+	return
+}
+
+func getBackupDateAndMode(conf *BackupConf) (date uint32, incr bool, w Warnings, e Error) {
+	path := conf.BackupLocation
+	if !IsDirectory(path) {
+		e = os.Mkdir(path, 0755)
+		if e != nil {
+			return
+		}
+	}
+	path += "/"+conf.GetCurrentStackName()
+	if !IsDirectory(path) {
+		e = os.Mkdir(path, 0755)
+		if e != nil {
+			return
+		}
+	}
 	return
 }
 
