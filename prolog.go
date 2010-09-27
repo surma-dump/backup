@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
+	e = readJSONFile(path, *conf)
+	if e != nil {
+		return
+	}
+
+	w, e = checkConfigSanity(conf)
+	return
+
+}
+
+func checkConfigSanity(conf *BackupConf) (w Warnings, e Error) {
+	return // FIXME
+}
+
 func GetAuthors() []string {
 	return strings.Split(AUTHORS, ";", -1)
 }
@@ -28,7 +43,7 @@ func ShowHelp(error bool) {
 	}
 }
 
-func SetupEnv() (w Warnings, e Error) {
+func SetupEnv(c *BackupConf) (w Warnings, e Error) {
 	configFile := flag.String("c", "~/.backuprc", "Path to config file")
 	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
@@ -38,7 +53,7 @@ func SetupEnv() (w Warnings, e Error) {
 	}
 
 	if !RegularFileExists(*configFile) {
-		e.NewError("Config file does not exist or is not a regular file")
+		e = os.NewError("Config file does not exist or is not a regular file")
 		return
 	}
 

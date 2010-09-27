@@ -5,37 +5,35 @@ import (
 	"container/vector"
 )
 
-type Error struct {
-	message string
-}
-// Making it comply with os.Error
-func (e *Error) String() string {
-	return e.message
+type Error os.Error
+
+func NewError(desc string) Error {
+	return os.NewError(desc)
 }
 
-type Warnings struct {
-	Messages []string
+type Warnings interface {
+	AddWarning(desc string)
+	AddWarningFromError(err Error)
+	GetWarnings() []string
 }
 
-func (e *Error) NewError(desc string) {
-	if e == nil {
-		e = new(Error)
-	}
-	e.message = desc
+type mWarnings struct {
+	messages []string
 }
 
-func (e *Error) NewErrorFromError(err os.Error) {
-	if e == nil {
-		e = new(Error)
-	}
-	e.message = err.String()
-}
-
-func (w *Warnings) NewWarning(desc string) {
-	if w == nil {
-		w.Messages = make([]string, 1, 3)
+func (w *mWarnings) AddWarning(desc string) {
+	if w.messages == nil {
+		w.messages = make([]string, 1, 10)
 	}
 
-	v := (*vector.StringVector)(&w.Messages)
+	v := (*vector.StringVector)(&w.messages)
 	v.Push(desc)
+}
+
+func (w *mWarnings) AddWarningFromError(err Error) {
+	w.AddWarning(err.String())
+}
+
+func (w *mWarnings) GetWarnings() []string {
+	return w.messages
 }

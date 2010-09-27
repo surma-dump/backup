@@ -19,6 +19,7 @@ var (
 )
 
 func main() {
-	_, _ = SetupEnv()
+	conf := new(BackupConf)
+	_, _ = SetupEnv(conf)
 
 }

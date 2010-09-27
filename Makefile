@@ -5,7 +5,7 @@ GOFILES=\
 	$(TARG).go\
 	error.go\
 	prolog.go\
-	os_helper.go\
+	helpers.go\
 
 include $(GOROOT)/src/Make.cmd
 
