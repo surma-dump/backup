@@ -23,10 +23,11 @@ func checkConfigSanity(conf *BackupConf) (w Warnings, e Error) {
 	if conf.Visited != nil {
 		w.AddWarning("Visited should not be defined by a config file. Its values will be ignored")
 	}
+	conf.Visited = make([]bool, len(conf.Whitelist))
 
-	for _,path := range conf.Whitelist {
+	for _, path := range conf.Whitelist {
 		if !NonSpecialFileExists(path) {
-			w.AddWarning("\""+path+"\" could not be found. It will be ignored")
+			w.AddWarning("\"" + path + "\" could not be found. It will be ignored")
 		}
 	}
 
@@ -48,7 +49,7 @@ func ShowHelp(error bool) {
 	output := GetOutput(error)
 
 	fmt.Fprintf(output, "backup v%s by:\n", VERSION)
-	for _,author := range GetAuthors() {
+	for _, author := range GetAuthors() {
 		fmt.Fprintf(output, "\t%s\n", author)
 	}
 }
@@ -67,6 +68,5 @@ func SetupEnv(c *BackupConf) (w Warnings, e Error) {
 		return
 	}
 
-	_ = configFile
 	return
 }
