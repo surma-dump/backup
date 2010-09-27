@@ -60,9 +60,14 @@ func TraverseFileTreeRecursive(path string, c chan<- string) {
 	c <- path
 	dir := IsDirectory(path)
 	if dir {
-		content, _ := GetDirectoryContent(path)
-		for _, file := range content {
-			TraverseFileTreeRecursive(path+"/"+file, c)
+		f, e := os.Open(path, os.O_RDONLY, 0)
+		defer f.Close()
+		if e != nil {
+			return
+		}
+
+		for content, e := f.Readdirnames(1); len(content) > 0 && e == nil; content, e = f.Readdirnames(1) {
+			TraverseFileTreeRecursive(path+"/"+content[0], c)
 		}
 	}
 	return
