@@ -20,6 +20,10 @@ var (
 
 func main() {
 	conf := new(BackupConf)
-	_, _ = SetupEnv(conf)
+	_, e := SetupEnv(conf)
+
+	if e != nil {
+		panic("Backup: "+e.String())
+	}
 
 }

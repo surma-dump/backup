@@ -9,7 +9,7 @@ import (
 )
 
 func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
-	e = readJSONFile(path, *conf)
+	e = ReadJSONFile(path, *conf)
 	if e != nil {
 		return
 	}
@@ -20,7 +20,17 @@ func readConfig(path string, conf *BackupConf) (w Warnings, e Error) {
 }
 
 func checkConfigSanity(conf *BackupConf) (w Warnings, e Error) {
-	return // FIXME
+	if conf.Visited != nil {
+		w.AddWarning("Visited should not be defined by a config file. Its values will be ignored")
+	}
+
+	for _,path := range conf.Whitelist {
+		if !NonSpecialFileExists(path) {
+			w.AddWarning("\""+path+"\" could not be found. It will be ignored")
+		}
+	}
+
+	return
 }
 
 func GetAuthors() []string {
