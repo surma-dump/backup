@@ -41,6 +41,40 @@ func HandleWarnings(prefix string, w Warnings) {
 	}
 }
 
+func (conf *BackupConf) HasUnvisitedDirectories() bool {
+	for _, b := range conf.Visited {
+		if !b {
+			return true
+		}
+	}
+	return false
+}
+
+func (conf *BackupConf) GetUnvisitedDirectory() string {
+	for i, b := range conf.Visited {
+		if !b {
+			return conf.Whitelist[i]
+		}
+	}
+	return ""
+}
+
+func (conf *BackupConf) IsBlacklisted(path string) bool {
+	blackPrefix := GetLongestPrefix(path, conf.Blacklist)
+	whitePrefix := GetLongestPrefix(path, conf.Whitelist)
+	fmt.Printf("\"%s\": %s vs %s\n", path, blackPrefix, whitePrefix)
+	return len(blackPrefix) > len(whitePrefix)
+}
+
+func (conf *BackupConf) GetFiles() (c <-chan string) {
+	//for conf.HasUnvisitedDirectories() {
+		allFiles := TraverseFileTree(conf.GetUnvisitedDirectory())
+		sanitizedFiles := SanitizeFilePaths(allFiles)
+		whiteFiles := FilterBlacklistedFiles(sanitizedFiles, func(path string)bool { return conf.IsBlacklisted(path)})
+	//}
+	return whiteFiles
+}
+
 func main() {
 	conf := new(BackupConf)
 	w, e := SetupEnv(conf)
@@ -51,8 +85,7 @@ func main() {
 	if e != nil {
 		panic("Backup: " + e.String())
 	}
-	c := make(chan string)
-	go TraverseFileTree(conf.Whitelist[0], c)
+	c := conf.GetFiles()
 	for file := range c {
 		print(" -> " + file + "\n")
 	}
