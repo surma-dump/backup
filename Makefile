@@ -10,4 +10,4 @@ GOFILES=\
 include $(GOROOT)/src/Make.cmd
 
 run:
-	./$(TARG)
+	./$(TARG) -c test/config

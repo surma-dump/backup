@@ -1,0 +1,12 @@
+{
+	"BackupLocation": "test/result",
+	"NumStacks": 2,
+	"StackSize": 7,
+	"Folders": [
+		"test/tree/do/",
+		"test/tree/do/do_not/do/"
+	],
+	"Blacklist": [
+		"test/tree/do/do_not/"
+	]
+}
