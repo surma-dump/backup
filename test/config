@@ -3,8 +3,9 @@
 	"NumStacks": 2,
 	"StackSize": 7,
 	"Folders": [
-		"test/tree/do/",
-		"test/tree/do/do_not/do/"
+		"test/tree/do1/",
+		"test/tree/do1/do_not/do/",
+		"test/tree/do2/"
 	],
 	"Blacklist": [
 		"test/tree/do/do_not/"
