@@ -66,12 +66,12 @@ func (conf *BackupConf) IsBlacklisted(path string) bool {
 	return len(blackPrefix) > len(whitePrefix)
 }
 
+// FIXME: Multiple Whitedirectries but one file output channel
 func (conf *BackupConf) GetFiles() (c <-chan string) {
-	//for conf.HasUnvisitedDirectories() {
 		allFiles := TraverseFileTree(conf.GetUnvisitedDirectory())
 		sanitizedFiles := SanitizeFilePaths(allFiles)
 		whiteFiles := FilterBlacklistedFiles(sanitizedFiles, func(path string)bool { return conf.IsBlacklisted(path)})
-	//}
+		MarkedFiles := MarkAsVisited(whiteFiles)
 	return whiteFiles
 }
 
