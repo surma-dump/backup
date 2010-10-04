@@ -8,6 +8,6 @@
 		"test/tree/do2/"
 	],
 	"Blacklist": [
-		"test/tree/do/do_not/"
+		"test/tree/do1/do_not/"
 	]
 }

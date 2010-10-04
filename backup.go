@@ -62,16 +62,44 @@ func (conf *BackupConf) GetUnvisitedDirectory() string {
 func (conf *BackupConf) IsBlacklisted(path string) bool {
 	blackPrefix := GetLongestPrefix(path, conf.Blacklist)
 	whitePrefix := GetLongestPrefix(path, conf.Whitelist)
-	fmt.Printf("\"%s\": %s vs %s\n", path, blackPrefix, whitePrefix)
 	return len(blackPrefix) > len(whitePrefix)
 }
 
-// FIXME: Multiple Whitedirectries but one file output channel
-func (conf *BackupConf) GetFiles() (c <-chan string) {
-		allFiles := TraverseFileTree(conf.GetUnvisitedDirectory())
+func (conf *BackupConf) TraverseWhitelist() (<-chan string) {
+	out := make(chan string)
+	done_signal := make(chan bool)
+
+	// Traverse every path in the Whitelist
+	for _, whitepath := range conf.Whitelist {
+		go func(path string) {
+			allFiles := TraverseFileTree(path)
+			for path := range allFiles {
+				out <- path
+			}
+			done_signal <- true
+		}(whitepath)
+	}
+
+	// Wait far all TraverFileTree() calls do be finished
+	// and close channels
+	go func() {
+		close_count := len(conf.Whitelist)
+		for _ = range done_signal {
+			close_count--
+			if  close_count == 0 {
+				close(done_signal)
+				close(out)
+			}
+		}
+	}()
+	return out
+}
+
+func (conf *BackupConf) GetFiles() (out  <-chan string) {
+		allFiles := conf.TraverseWhitelist()
 		sanitizedFiles := SanitizeFilePaths(allFiles)
 		whiteFiles := FilterBlacklistedFiles(sanitizedFiles, func(path string)bool { return conf.IsBlacklisted(path)})
-		MarkedFiles := MarkAsVisited(whiteFiles)
+		//MarkedFiles := MarkAsVisited(whiteFiles)
 	return whiteFiles
 }
 
