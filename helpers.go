@@ -3,7 +3,6 @@ package main
 import (
 	"json"
 	"os"
-	paths "path"
 	"strings"
 )
 
@@ -52,44 +51,6 @@ func GetDirectoryContent(path string) ([]string, Error) {
 	return l, e
 }
 
-func TraverseFileTree(path string) (<-chan string) {
-	out := make(chan string)
-	go func() {
-		TraverseFileTreeRecursive(path, out)
-		close(out)
-	}()
-	return out
-}
-
-func TraverseFileTreeRecursive(path string, out chan<- string) {
-	out <- path
-	dir := IsDirectory(path)
-	if dir {
-		f, e := os.Open(path, os.O_RDONLY, 0)
-		defer f.Close()
-		if e != nil {
-			return
-		}
-
-		for content, e := f.Readdirnames(1); len(content) > 0 && e == nil; content, e = f.Readdirnames(1) {
-			TraverseFileTreeRecursive(path+"/"+content[0], out)
-		}
-	}
-	return
-}
-
-func FilterBlacklistedFiles(in <-chan string, blackfunc func(string) bool) (<-chan string) {
-	out := make(chan string)
-	go func() {
-		for path := range in {
-			if !blackfunc(path) {
-				out <- path
-			}
-		}
-		close(out)
-	}()
-	return out
-}
 
 func GetLongestPrefix(s string, prefixes []string) (r string) {
 	r = ""
@@ -101,13 +62,3 @@ func GetLongestPrefix(s string, prefixes []string) (r string) {
 	return
 }
 
-func SanitizeFilePaths(in <-chan string) (<-chan string) {
-	out := make(chan string)
-	go func() {
-		for path := range in {
-			out <- paths.Clean(path)
-		}
-		close(out)
-	}()
-	return out
-}

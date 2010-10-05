@@ -6,6 +6,7 @@ GOFILES=\
 	error.go\
 	prolog.go\
 	helpers.go\
+	pipeline.go\
 
 include $(GOROOT)/src/Make.cmd
 

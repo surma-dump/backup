@@ -83,10 +83,10 @@ func (conf *BackupConf) TraverseWhitelist() (<-chan string) {
 	// Wait far all TraverFileTree() calls do be finished
 	// and close channels
 	go func() {
-		close_count := len(conf.Whitelist)
+		left := len(conf.Whitelist)
 		for _ = range done_signal {
-			close_count--
-			if  close_count == 0 {
+			left--
+			if  left == 0 {
 				close(done_signal)
 				close(out)
 			}
@@ -96,11 +96,12 @@ func (conf *BackupConf) TraverseWhitelist() (<-chan string) {
 }
 
 func (conf *BackupConf) GetFiles() (out  <-chan string) {
-		allFiles := conf.TraverseWhitelist()
-		sanitizedFiles := SanitizeFilePaths(allFiles)
-		whiteFiles := FilterBlacklistedFiles(sanitizedFiles, func(path string)bool { return conf.IsBlacklisted(path)})
-		//MarkedFiles := MarkAsVisited(whiteFiles)
-	return whiteFiles
+	allFiles := conf.TraverseWhitelist()
+	sanitizedFiles := SanitizeFilePaths(allFiles)
+	whiteFiles := FilterBlacklistedFiles(sanitizedFiles, func(path string)bool { return conf.IsBlacklisted(path)})
+	normalFiles := FilterNormalFiles(whiteFiles)
+	uniqueFiles := FilterByInode(normalFiles)
+	return uniqueFiles
 }
 
 func main() {
