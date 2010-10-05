@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"archive/tar"
+	"time"
 )
 
 
@@ -54,6 +56,23 @@ func HandleWarnings(prefix string, w Warnings) {
 			fmt.Fprintf(os.Stderr, "Warning: "+prefix+": "+msg+"\n")
 		}
 	}
+}
+
+func (conf *BackupConf) GetOutputFileName() (s string) {
+	s = conf.BackupLocation+"/stack_1/"
+	if conf.IsIncremental() {
+		s += "incr_"
+	} else {
+		s += "full_"
+	}
+
+	s += fmt.Sprintf("%d", time.Nanoseconds())
+	return
+
+}
+func (conf *BackupConf) GetOutputHandle() *tar.Writer {
+	//file, e := os.Open(conf.GetOutputFileName()
+	return new(tar.Writer)
 }
 
 func (conf *BackupConf) HasUnvisitedDirectories() bool {
