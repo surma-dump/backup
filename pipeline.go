@@ -71,18 +71,46 @@ func FilterNormalFiles(in <-chan string) (<-chan string) {
 }
 
 func inodeHash(v interface{}) int {
-	return v.(int)
+	return int(v.(uint64))
 }
 
-func FilterByInode(in <-chan string) (<-chan string) {
+func FilterDuplicates(in <-chan string) (<-chan string) {
 	out := make(chan string)
 	go func() {
 		inodes := hashmap.New(32, inodeHash)
 		for path := range in {
 			file, _ := os.Stat(path)
-			if !inodes.Containes(file.Ino) {
-				inodes.Push(file.Ino)
+			if !inodes.Exists(file.Ino) {
+				inodes.Push(file.Ino, nil)
 				out <- path
+			}
+		}
+		close(out)
+	}()
+	return out
+}
+
+func FilterByTouchDate(in <-chan string, deadline int64) (<-chan string) {
+	out := make(chan string)
+	go func() {
+		for path := range in {
+			file, _ := os.Stat(path)
+			if file.Mtime_ns > deadline {
+				out <- path
+			}
+		}
+		close(out)
+	}()
+	return out
+}
+
+func OpenFiles(in <-chan string) (<-chan *os.File) {
+	out := make(chan *os.File)
+	go func() {
+		for path := range in {
+			file, e := os.Open(path, os.O_RDONLY, 0)
+			if e == nil {
+				out <- file
 			}
 		}
 		close(out)

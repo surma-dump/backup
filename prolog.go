@@ -49,7 +49,7 @@ func extrapolateRestData(conf *BackupConf) (w Warnings, e Error) {
 	return
 }
 
-func getBackupDateAndMode(conf *BackupConf) (date uint32, incr bool, w Warnings, e Error) {
+func getBackupDateAndMode(conf *BackupConf) (date int64, incr bool, w Warnings, e Error) {
 	path := conf.BackupLocation
 	if !IsDirectory(path) {
 		e = os.Mkdir(path, 0755)

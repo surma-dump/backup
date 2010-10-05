@@ -14,7 +14,7 @@ type BackupConf struct {
 	Blacklist      []string
 	Visited        []bool
 	IsIncremental  bool
-	LastBackup     uint32
+	LastBackup     int64 // nanoseconds since epoch
 }
 
 var (
@@ -95,13 +95,18 @@ func (conf *BackupConf) TraverseWhitelist() (<-chan string) {
 	return out
 }
 
-func (conf *BackupConf) GetFiles() (out  <-chan string) {
+func (conf *BackupConf) GetFiles() (out  <-chan *os.File) {
 	allFiles := conf.TraverseWhitelist()
 	sanitizedFiles := SanitizeFilePaths(allFiles)
 	whiteFiles := FilterBlacklistedFiles(sanitizedFiles, func(path string)bool { return conf.IsBlacklisted(path)})
 	normalFiles := FilterNormalFiles(whiteFiles)
-	uniqueFiles := FilterByInode(normalFiles)
-	return uniqueFiles
+	uniqueFiles := FilterDuplicates(normalFiles)
+	backupFiles := uniqueFiles
+	if conf.IsIncremental {
+		backupFiles = FilterByTouchDate(uniqueFiles, conf.LastBackup)
+	}
+	fileHandlers := OpenFiles(backupFiles)
+	return fileHandlers
 }
 
 func main() {
@@ -116,6 +121,7 @@ func main() {
 	}
 	c := conf.GetFiles()
 	for file := range c {
-		print(" -> " + file + "\n")
+		print(" -> " + file.Name() + "\n")
+		file.Close()
 	}
 }
