@@ -1,8 +1,10 @@
 package main
 
 import (
+	"math"
 	"fmt"
 	"os"
+	"strings"
 )
 
 
@@ -13,7 +15,6 @@ type BackupConf struct {
 	Whitelist      []string "Folders"
 	Blacklist      []string
 	Visited        []bool
-	IsIncremental  bool
 	LastBackup     int64 // nanoseconds since epoch
 }
 
@@ -21,6 +22,20 @@ var (
 	VERSION = "0.1"
 	AUTHORS = "Alexander \"Surma\" Surma <surma@78762.de>"
 )
+
+func main() {
+	conf := new(BackupConf)
+	w, e := SetupEnv(conf)
+
+	HandleError("Environment setup", e)
+	HandleWarnings("Environment setup", w)
+
+	c := conf.GetFiles()
+	for file := range c {
+		print(" -> " + file.Name() + "\n")
+		file.Close()
+	}
+}
 
 func HandleError(prefix string, e Error) {
 	if e != nil {
@@ -102,26 +117,78 @@ func (conf *BackupConf) GetFiles() (out  <-chan *os.File) {
 	normalFiles := FilterNormalFiles(whiteFiles)
 	uniqueFiles := FilterDuplicates(normalFiles)
 	backupFiles := uniqueFiles
-	if conf.IsIncremental {
+	if conf.IsIncremental() {
 		backupFiles = FilterByTouchDate(uniqueFiles, conf.LastBackup)
 	}
 	fileHandlers := OpenFiles(backupFiles)
 	return fileHandlers
 }
 
-func main() {
-	conf := new(BackupConf)
-	w, e := SetupEnv(conf)
-
-	HandleError("Environment setup", e)
-	HandleWarnings("Environment setup", w)
-
-	if e != nil {
-		panic("Backup: " + e.String())
-	}
-	c := conf.GetFiles()
-	for file := range c {
-		print(" -> " + file.Name() + "\n")
-		file.Close()
-	}
+func (conf *BackupConf) IsIncremental() bool {
+	return conf.LastBackup != 0
 }
+
+func (conf *BackupConf) CheckConfigSanity() (w Warnings, e Error) {
+	for _, path := range conf.Whitelist {
+		if !IsNonSpecialFile(path) {
+			w.AddWarning("\"" + path + "\" could not be found. It will be ignored")
+		}
+	}
+
+	return
+}
+
+func (conf *BackupConf) GetStackPath(stack uint8) string {
+	zeros := fmt.Sprintf("%%0%dd", int(math.Ceil(math.Log10(float64(conf.NumStacks)))))
+	return conf.BackupLocation+"/stack_"+fmt.Sprintf(zeros, stack)
+}
+func (conf *BackupConf) CreateBackupTree() (e Error) {
+	if !IsDirectory(conf.BackupLocation) {
+		e = os.Mkdir(conf.BackupLocation, 0755)
+		if e != nil {
+			return
+		}
+	}
+	for i := uint8(1); i <= conf.NumStacks; i++ {
+		subpath := conf.GetStackPath(i)
+		if !IsDirectory(subpath) {
+			e = os.Mkdir(subpath, 0755)
+			if e != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+func (conf *BackupConf) GetNumBackupsInStack(stack uint8) (count int) {
+	files, _ := GetDirectoryContent(conf.GetStackPath(stack))
+	for _, file := range files {
+		if strings.HasPrefix(file, "full_") || strings.HasPrefix(file, "incr_") {
+			count++
+		}
+	}
+	return len(files)
+}
+
+func (conf *BackupConf) ShiftStacks() {
+	os.RemoveAll(conf.GetStackPath(conf.NumStacks))
+	for i := uint8(1); i < conf.NumStacks; i++ {
+		os.Rename(conf.GetStackPath(i), conf.GetStackPath(i+1))
+	}
+	os.Mkdir(conf.GetStackPath(1), 0755)
+}
+
+func (conf *BackupConf) GetYoungestBackupInStack(stack uint8) (date int64){
+	files, _ := GetDirectoryContent(conf.GetStackPath(stack))
+	for _, file := range files {
+		if strings.HasPrefix(file, "full_") || strings.HasPrefix(file, "incr_") {
+			backupDate := ExtractBackupDate(file)
+			if backupDate > date {
+				date = backupDate
+			}
+		}
+	}
+	return
+}
+

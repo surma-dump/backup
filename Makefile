@@ -4,7 +4,7 @@ TARG=backup
 GOFILES=\
 	$(TARG).go\
 	error.go\
-	prolog.go\
+	prologue.go\
 	helpers.go\
 	pipeline.go\
 
