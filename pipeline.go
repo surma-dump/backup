@@ -4,6 +4,8 @@ import (
 	"os"
 	paths "path"
 	"container/hashmap"
+	"io"
+	"archive/tar"
 )
 
 func TraverseFileTree(path string) (<-chan string) {
@@ -116,4 +118,18 @@ func OpenFiles(in <-chan string) (<-chan *os.File) {
 		close(out)
 	}()
 	return out
+}
+
+func TarFiles(in <-chan *os.File, out *tar.Writer) {
+	for file := range in {
+		stat, _ := file.Stat()
+		if stat.IsRegular() {
+			hdr := FileInfoToTarHeader(stat)
+			hdr.Name = file.Name() // Full path!
+			out.WriteHeader(hdr)
+			io.Copy(out, file)
+			out.Flush()
+		}
+		file.Close()
+	}
 }

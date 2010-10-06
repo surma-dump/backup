@@ -4,6 +4,7 @@ import (
 	"json"
 	"os"
 	"strings"
+	"archive/tar"
 )
 
 func IsRegularFile(path string) bool {
@@ -62,3 +63,15 @@ func GetLongestPrefix(s string, prefixes []string) (r string) {
 	return
 }
 
+func FileInfoToTarHeader(fi *os.FileInfo) (th *tar.Header) {
+	th = new(tar.Header)
+	th.Name = fi.Name
+	th.Mode = int64(fi.Mode)
+	th.Uid = fi.Uid
+	th.Gid = fi.Gid
+	th.Size = fi.Size
+	th.Mtime = fi.Mtime_ns / 1e9
+	th.Atime = fi.Atime_ns / 1e9
+	th.Ctime = fi.Ctime_ns / 1e9
+	return
+}

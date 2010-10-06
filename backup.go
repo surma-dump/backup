@@ -7,8 +7,33 @@ import (
 	"strings"
 	"archive/tar"
 	"time"
+	"compress/gzip"
 )
 
+type TarGzFile struct {
+	f *os.File
+	gz *gzip.Compressor
+	TarWriter *tar.Writer
+}
+
+func (tgf *TarGzFile) Write(p []byte) {
+	tgf.TarWriter.Write(p)
+}
+
+func (tgf *TarGzFile) Close() {
+	tgf.TarWriter.Close()
+	tgf.gz.Close()
+	tgf.f.Close()
+}
+
+func NewTarGzFile(path string) *TarGzFile {
+	f, e := os.Open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0644)
+	HandleError("Opening output file", e)
+	gz, e := gzip.NewWriter(f)
+	HandleError("Setting up compressor", e)
+	t := tar.NewWriter(gz)
+	return &TarGzFile{f, gz, t}
+}
 
 type BackupConf struct {
 	BackupLocation string
@@ -32,11 +57,10 @@ func main() {
 	HandleError("Environment setup", e)
 	HandleWarnings("Environment setup", w)
 
-	c := conf.GetFiles()
-	for file := range c {
-		print(" -> " + file.Name() + "\n")
-		file.Close()
-	}
+	files := conf.GetFiles()
+	output := conf.GetOutputHandles()
+	TarFiles(files, output.TarWriter)
+	output.Close()
 }
 
 func HandleError(prefix string, e Error) {
@@ -67,12 +91,13 @@ func (conf *BackupConf) GetOutputFileName() (s string) {
 	}
 
 	s += fmt.Sprintf("%d", time.Nanoseconds())
+	s += ".tgz"
 	return
 
 }
-func (conf *BackupConf) GetOutputHandle() *tar.Writer {
-	//file, e := os.Open(conf.GetOutputFileName()
-	return new(tar.Writer)
+
+func (conf *BackupConf) GetOutputHandles() *TarGzFile {
+	return NewTarGzFile(conf.GetOutputFileName())
 }
 
 func (conf *BackupConf) HasUnvisitedDirectories() bool {

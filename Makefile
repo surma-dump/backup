@@ -9,6 +9,3 @@ GOFILES=\
 	pipeline.go\
 
 include $(GOROOT)/src/Make.cmd
-
-run:
-	./$(TARG) -c test/config

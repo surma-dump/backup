@@ -50,9 +50,9 @@ func getBackupDateAndMode(conf *BackupConf) (date int64, w Warnings, e Error) {
 }
 
 func ExtractBackupDate(file string) (date int64) {
-	n, _ := fmt.Sscanf(file, "incr_%d.tbz", &date)
+	n, _ := fmt.Sscanf(file, "incr_%d.tgz", &date)
 	if n < 1 {
-		fmt.Sscanf(file, "full_%d.tbz", &date)
+		fmt.Sscanf(file, "full_%d.tgz", &date)
 	}
 	return
 }
