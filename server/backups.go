@@ -1,28 +1,43 @@
 package main
 
 import (
-	_ "../common/_obj/common"
+	. "../common/_obj/common"
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 )
 
 func main() {
-	defer errorhandling()
+	defer ErrorHandler()
 	path, addr := parseFlags()
 	_, _ = path, addr
 }
 
 type Error struct {
 	Description string
+	Backtrace bool
 }
 
-func errorhandling() {
-	if err := recover(); err != nil {
-		fmt.Printf("%s\n", err.(Error).Description)
-		
+func printBacktrace() {
+	fmt.Printf("Backtrace:\n")
+	i := 2
+	for _, file, line, ok := runtime.Caller(i); ok; _, file, line, ok = runtime.Caller(i) {
+		i++
+		fmt.Printf("(%3d) %s:%d\n", i, file, line)
 	}
 }
+
+func ErrorHandler() {
+	if err := recover(); err != nil {
+		fmt.Printf("%s\n\n", err.(Error).Description)
+		if err.(Error).Backtrace {
+			printBacktrace()
+		}
+		os.Exit(1)
+	}
+}
+
 
 func parseFlags() (path string, addr string) {
 	flag.StringVar(&path, "p", "", "Path to jail the demon to")
@@ -36,9 +51,16 @@ func parseFlags() (path string, addr string) {
 		panic(Error{Description: ""})
 	}
 
-	if path == "" {
-		panic(Error{Description: "You have set a path with -p"})
+	checkFlagValues(path, addr)
+	return
+}
+
+func checkFlagValues(path, addr string) {
+	if IsRegularFile(path) {
+		panic(Error{Description: "Path cannot be a file", Backtrace: false})
 	}
 
-	return
+	if !IsValidAddress(addr) {
+		panic(Error{Description: "Invalid listener address", Backtrace: false})
+	}
 }
