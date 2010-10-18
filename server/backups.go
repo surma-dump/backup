@@ -6,12 +6,23 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"rpc/json"
+	"net"
 )
 
 func main() {
 	defer ErrorHandler()
 	path, addr := parseFlags()
-	_, _ = path, addr
+
+	l := net.Listen("tcp", addr)
+	for true {
+		conn, e := l.Accept()
+		if e != nil {
+			fmt.Printf("Connection error: %s\n", e.String())
+			continue;
+		}
+		json.ServeConn(conn)
+	}
 }
 
 type Error struct {
