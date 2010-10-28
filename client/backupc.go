@@ -1,9 +1,9 @@
 package main
 
 import (
-	_ "../common/_obj/common"
+	_ "../common/common"
 )
 
 func main() {
-
+	
 }

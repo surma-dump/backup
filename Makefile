@@ -1,7 +1,7 @@
 all:
-	make -C common all
-	make -C client all
-	make -C server all
+	make -C common
+	make -C client
+	make -C server
 	cp client/backupc .
 	cp server/backups .
 

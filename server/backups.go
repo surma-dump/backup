@@ -1,27 +1,31 @@
 package main
 
 import (
-	. "../common/_obj/common"
+	. "../common/common"
 	"flag"
 	"fmt"
 	"os"
 	"runtime"
-	"rpc/json"
+	"rpc/jsonrpc"
 	"net"
 )
 
 func main() {
 	defer ErrorHandler()
 	path, addr := parseFlags()
+	_ = path
 
-	l := net.Listen("tcp", addr)
+	l, e := net.Listen("tcp", addr)
+	if e != nil {
+		panic(Error{Description: e.String()})
+	}
 	for true {
 		conn, e := l.Accept()
 		if e != nil {
 			fmt.Printf("Connection error: %s\n", e.String())
-			continue;
+			continue
 		}
-		json.ServeConn(conn)
+		jsonrpc.ServeConn(conn)
 	}
 }
 
@@ -68,10 +72,10 @@ func parseFlags() (path string, addr string) {
 
 func checkFlagValues(path, addr string) {
 	if IsRegularFile(path) {
-		panic(Error{Description: "Path cannot be a file", Backtrace: false})
+		panic(Error{Description: "Path cannot be a file"})
 	}
 
 	if !IsValidAddress(addr) {
-		panic(Error{Description: "Invalid listener address", Backtrace: false})
+		panic(Error{Description: "Invalid listener address"})
 	}
 }
