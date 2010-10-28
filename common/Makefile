@@ -6,6 +6,7 @@ myall: all
 TARG=common
 GOFILES=\
 	$(TARG).go\
+	backup.go\
 
 CLEANFILES=\
 	common.a\

@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"rpc"
 	"rpc/jsonrpc"
 	"net"
+)
+
+const (
+	DEFAULT_ADDR = "0.0.0.0:23000"
 )
 
 func main() {
@@ -25,8 +30,14 @@ func main() {
 			fmt.Printf("Connection error: %s\n", e.String())
 			continue
 		}
-		jsonrpc.ServeConn(conn)
+		go serve(conn)
 	}
+}
+
+func serve(conn net.Conn) {
+	server := rpc.NewServer()
+	server.Register(new(BackupRPC))
+	server.ServeCodec(jsonrpc.NewServerCodec(conn))
 }
 
 type Error struct {
@@ -56,7 +67,7 @@ func ErrorHandler() {
 
 func parseFlags() (path string, addr string) {
 	flag.StringVar(&path, "p", "", "Path to jail the demon to")
-	flag.StringVar(&addr, "l", "0.0.0.0:23000", "Address to listen on")
+	flag.StringVar(&addr, "l", DEFAULT_ADDR, "Address to listen on")
 	h := flag.Bool("h", false, "Show Help")
 
 	flag.Parse()
