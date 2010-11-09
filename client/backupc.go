@@ -12,15 +12,9 @@ func main() {
 	}
 	in := NewBackupRPCData()
 	out := NewBackupRPCData()
-	in.Values["msg"] = "Hallo, Server!\n"
-	e = c.Call("BackupRPC.DummyFunc", in, out)
+	in.Values["configuration"] = BackupConfiguration{}
+	e = c.Call("BackupRPC.Set", in, out)
 	if e != nil {
 		panic(e.String())
-	}
-	s, ok := out.Values["msg"]
-	if ok {
-		println(s.(string))
-	} else {
-		println("aah")
 	}
 }
