@@ -4,11 +4,10 @@ import (
 	. "../common/common"
 	"flag"
 	"fmt"
-	"os"
-	"runtime"
 	"rpc"
 	"rpc/jsonrpc"
 	"net"
+	"git.78762.de/go/error"
 )
 
 const (
@@ -16,13 +15,13 @@ const (
 )
 
 func main() {
-	defer ErrorHandler()
+	defer error.ErrorHandler()
 	path, addr := parseFlags()
 	_ = path
 
 	l, e := net.Listen("tcp", addr)
 	if e != nil {
-		panic(Error{Description: e.String()})
+		panic(e)
 	}
 	for true {
 		conn, e := l.Accept()
@@ -40,31 +39,6 @@ func serve(conn net.Conn) {
 	server.ServeCodec(jsonrpc.NewServerCodec(conn))
 }
 
-type Error struct {
-	Description string
-	Backtrace bool
-}
-
-func printBacktrace() {
-	fmt.Printf("Backtrace:\n")
-	i := 2
-	for _, file, line, ok := runtime.Caller(i); ok; _, file, line, ok = runtime.Caller(i) {
-		i++
-		fmt.Printf("(%3d) %s:%d\n", i, file, line)
-	}
-}
-
-func ErrorHandler() {
-	if err := recover(); err != nil {
-		fmt.Printf("%s\n\n", err.(Error).Description)
-		if err.(Error).Backtrace {
-			printBacktrace()
-		}
-		os.Exit(1)
-	}
-}
-
-
 func parseFlags() (path string, addr string) {
 	flag.StringVar(&path, "p", "", "Path to jail the demon to")
 	flag.StringVar(&addr, "l", DEFAULT_ADDR, "Address to listen on")
@@ -74,7 +48,7 @@ func parseFlags() (path string, addr string) {
 
 	if *h {
 		flag.PrintDefaults()
-		panic(Error{Description: ""})
+		error.Panic("", false)
 	}
 
 	checkFlagValues(path, addr)
@@ -83,10 +57,10 @@ func parseFlags() (path string, addr string) {
 
 func checkFlagValues(path, addr string) {
 	if IsRegularFile(path) {
-		panic(Error{Description: "Path cannot be a file"})
+		error.Panic("File cannot be found", false)
 	}
 
 	if !IsValidAddress(addr) {
-		panic(Error{Description: "Invalid listener address"})
+		error.Panic("Invalid listener address", false)
 	}
 }
