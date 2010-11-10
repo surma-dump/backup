@@ -26,6 +26,33 @@ func (b *BackupRPC) Set(in *BackupRPCData, out *BackupRPCData) os.Error {
 	return nil
 }
 
+// TODO Fix parameters! Maybe rethink the generic parameter thing
+func (b *BackupRPC) Open(in *BackupRPCData, out *BackupRPCData) os.Error {
+	if b.Output != nil {
+		return os.NewError("File is already open")
+	}
+
+	var e os.Error
+	b.Output, e = b.BackupConf.GetOutputWriter()
+	return e
+}
+
+func (b *BackupRPC) Write(b []byte) (int, os.Error) {
+	if b.Output != nil {
+		return 0, os.NewError("No file is opened")
+	}
+	return b.Output.Write(b)
+}
+
+func (b *BackupRPC) Close() os.Error {
+	if b.Output == nil {
+		return os.NewError("File is already closed")
+	}
+	b.Output.Close()
+	b.Output = nil
+	return nil
+}
+
 // My BackupRPC struct holds interface{} values. Since their
 // actualy dynamic type is lost during transition over the network
 // due to the limitations of json, a type assertion to e.g. BackupConfiguration

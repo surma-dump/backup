@@ -29,11 +29,11 @@ func main() {
 			fmt.Printf("Connection error: %s\n", e.String())
 			continue
 		}
-		go serve(conn)
+		go serveFunctions(conn)
 	}
 }
 
-func serve(conn net.Conn) {
+func serveFunctions(conn net.Conn) {
 	server := rpc.NewServer()
 	server.Register(new(BackupRPC))
 	server.ServeCodec(jsonrpc.NewServerCodec(conn))

@@ -6,10 +6,6 @@ import (
 )
 
 func main() {
-	c, e := jsonrpc.Dial("tcp", "localhost:23000")
-	if e != nil {
-		panic(e.String());
-	}
 	in := NewBackupRPCData()
 	out := NewBackupRPCData()
 	in.Values["configuration"] = BackupConfiguration{}
